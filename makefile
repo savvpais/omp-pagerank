@@ -1,7 +1,7 @@
-all: OMPPageRankGS pageRankGS
+all: pageRankGSOMP pageRankGS
 
-OMPPageRankGS:OMPPageRankGS.c
-	gcc OMPPageRankGS.c -o prgsomp -fopenmp -O3
+pageRankGSOMP:pageRankGSOMP.c
+	gcc pageRankGSOMP.c -o prgsomp -fopenmp -O3
 
 pageRankGS:pageRankGS.c
 	gcc pageRankGS.c -o prgs -O3
