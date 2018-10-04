@@ -7,10 +7,11 @@
 
 double calcError(double *a, double *b, int N);
 void pageRankGaussSeidel(int N,int **adjMat,int *degreeArray,int *inboundArray,double *pageRankVec);
+void test (int N, double *pageRankVec, char *testfile);
 
 int main(int argc , char **argv){
-	if (argc != 2) {
-        printf("Usage: %s <filename> \n", argv[0]);
+	if (argc < 2 || argc > 3) {
+        printf("Error using %s! Usage is: ./%s <dataset>.txt <testfile>.txt (testfile is optional)\n",argv[0], argv[0]);
         exit(1);
     }
     
@@ -39,11 +40,11 @@ int main(int argc , char **argv){
             }
         } 
     }
-    
+    //Debug
     //~ printf("Number of nodes: %d \n",N);
     
     fseek(file, 0, SEEK_SET);
-    
+    //Check if N is correct
 	int from, to;
     while (fgets(line, 512, file) != NULL){
         token = strtok(line,s);
@@ -63,7 +64,7 @@ int main(int argc , char **argv){
     int *degreeArray;
     degreeArray = malloc(sizeof(int) * N);
     if (degreeArray == NULL){
-        printf("Could not allocate memory for the outBoundLinks array \n");
+        printf("Could not allocate memory for the degreeArray \n");
         exit(-1);
     
     }
@@ -71,17 +72,17 @@ int main(int argc , char **argv){
     int *inboundArray;
     inboundArray = malloc(sizeof(int) * N);
     if (inboundArray == NULL){
-        printf("Could not allocate memory for the inBoundLinks array \n");
+        printf("Could not allocate memory for the inboundArray \n");
         exit(-1);
     }
     
-    for (i=0;i<N;i++)
+    for (i = 0; i < N; i++)
         inboundArray[i] = 0;
     
     
 
     fseek(file, 0, SEEK_SET);
-
+	//Count outbound and inbound links for each page
     while (fgets(line, 512, file) != NULL){
         
         token = strtok(line,s);
@@ -96,7 +97,7 @@ int main(int argc , char **argv){
 	int **adjMat;
     adjMat = malloc(sizeof(int*) * N);
     if (adjMat == NULL){
-        printf("Could not allocate memory for the Graph array\n");
+        printf("Could not allocate memory for the adjMat array\n");
         exit(-1);
     }
 
@@ -114,6 +115,7 @@ int main(int argc , char **argv){
         counter[i] = 0;
     
     fseek(file, 0, SEEK_SET);
+    //Get the adjecency matrix
     while (fgets(line, 512, file) != NULL){
         
         token = strtok(line, s);
@@ -128,7 +130,7 @@ int main(int argc , char **argv){
     double *pageRankVec;
     pageRankVec = malloc(sizeof(double) * N);
     if (pageRankVec == NULL){
-        printf("Could not allocate memory for the pageRankVector array \n");
+        printf("Could not allocate memory for the pageRank vector \n");
         exit(-1);
     }
         
@@ -148,6 +150,9 @@ int main(int argc , char **argv){
     
     printf("Serial PageRank time: %f \n", time);
     
+    if (argc = 3){
+		test(N, pageRankVec, argv[2]);
+	}
     
     free(inboundArray);
     free(degreeArray);
@@ -204,7 +209,7 @@ void pageRankGaussSeidel(int N, int **adjMat, int *degreeArray, int *inboundArra
         
         danglingSum=0;
         
-        //dangling nodes
+        //Compute dangling node sum
         for(j = 0; j < N; j++){
             if(degreeArray[j] == 0){
                 danglingSum = danglingSum + pageRankVec[j] / N;
@@ -223,5 +228,36 @@ void pageRankGaussSeidel(int N, int **adjMat, int *degreeArray, int *inboundArra
         count++;
         error = calcError(pageRankVec, z, N);
     }
-	//~ printf("pagerank iterations:%d \n",count);
+	//~ printf("PageRank iterations:%d \n",count);
 }
+
+void test (int N, double *pageRankVec, char *testfile){
+	FILE *file = fopen(testfile, "r");
+	if(file==NULL){
+		printf("Could not open %s\n",testfile);
+		exit(1);
+	}
+	
+	double *testVec;
+	testVec = malloc(sizeof(double) * N);
+	if (testVec == NULL){
+        printf("Could not allocate memory for the testVec array \n");
+        exit(-1);
+    }
+    
+    int i, k;
+    for (i = 0; i < N; i++)
+		k = fscanf(file,"%lf",&testVec[i]);
+
+	int failed = 0;
+	for(i = 0; i < N; i++){
+		if (fabs(pageRankVec[i]-(double)testVec[i])/fabs((double)testVec[i]) > 0.1)
+			failed++;
+	}
+	
+	if((double)(N-failed) / (double)N * 100 < 95.0)
+		printf("Test failed!\n");
+	else
+		printf("Test passed!\n");
+}
+
